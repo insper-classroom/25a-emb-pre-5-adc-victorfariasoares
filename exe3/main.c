@@ -27,35 +27,20 @@ void process_task(void *p) {
     int data = 0;
 
     // Variáveis estáticas para manter o estado do filtro
-    static int samples[5] = {0}; // Buffer circular para 5 amostras
+    static int samples[5] = {0, 0, 0, 0, 0}; // Buffer circular para 5 amostras
     static int count = 0;        // Número de amostras já recebidas (até 5)
-    static int index = 0;        // Índice para atualização circular
-    static int sum = 0;          // Soma das 5 amostras atuais
+    static int mean = 0;          // Soma das 5 amostras atuais
 
     while (true) {
         if (xQueueReceive(xQueueData, &data, 100)) {
-        // Realiza o processamento diretamente dentro deste if
-            if (count < 5) {
-                // Ainda não tem 5 amostras: preenche o buffer
-                samples[count] = data;
-                sum += data;
-                count++;
-                // Quando atingir 5 amostras, calcula e imprime a média filtrada
-                if (count == 5) {
-                    double avg = sum / 5.0;
-                    int filtered = (int)(avg + 0.5) - 127; // Arredonda a média e subtrai o DC offset
-                    printf("%d\n", filtered);
-                }
-            } else {
-                // Buffer já possui 5 amostras, atualiza o buffer circular:
-                sum = sum - samples[index] + data;  // Remove a amostra mais antiga e adiciona a nova
-                samples[index] = data;
-                index = (index + 1) % 5;              // Atualiza o índice de forma circular
-
-                double avg = sum / 5.0;
-                int filtered = (int)(avg) - 127; // Filtra (subtraindo 127) e arredonda a média
-                printf("%d\n", filtered);
-                }
+            if (count < 4) {
+                count ++;
+            } else{
+                count = 0;
+            }
+            samples[count] = data;
+            mean = (samples[0] + samples[1] + samples[2] + samples[3] + samples[4]) / 5;
+            printf("%d\n", mean);
 
             // deixar esse delay!
             vTaskDelay(pdMS_TO_TICKS(50));
